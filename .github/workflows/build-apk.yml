@@ -1,0 +1,50 @@
+name: Build My Shop POS APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get source ZIP
+        uses: actions/checkout@v4
+
+      - name: Unpack project
+        run: unzip -q *.zip
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        working-directory: my-shop-pos-android
+        run: |
+          npm install
+          npm run build
+          npx cap add android
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: My-Shop-POS-APK
+          path: my-shop-pos-android/android/app/build/outputs/apk/debug/app-debug.apk
